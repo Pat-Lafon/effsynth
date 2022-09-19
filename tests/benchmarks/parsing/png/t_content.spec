@@ -1,42 +1,22 @@
-    
-formula guard1 = \(h : heap).  ilssel (h, inp) = l0  /\ hd (l0) = i /\ 
-				(sel (h, cnt) > 0) /\ 
+formula guard1 = \(h : heap). hd_sel (h,inp) == i /\ 
+				(sel (h, cnt) > boundx) /\ 
 				([i = 0] \/ [i = 1] \/ [i = 2] \/ [i = 3]);
 				
-formula inv1 = \(h : heap). ilssel (h, content) = l1 /\ len (l1) + sel (h, cnt) == boundx;
-formula guard2 =  \(h : heap).   ilssel (h, inp) = l2  /\ hd (l2) = i  /\ 
-				(sel (h, cnt) == 0) /\
-				([i = 0] \/ [i = 1] \/ [i = 2] \/ [i = 3]);
-
-l0 : [int];		
-l1 :[int];
-l2 : [int];
-l3 : [int];
-l4 : [int];
+formula inv1 = \(h : heap). sel (h, content) == l2 /\ len (l2) == sel (h, cnt);
+formula guard2 =  \(h : heap). hd_sel (h,inp) == i /\ 
+				(sel (h, cnt) == boundx);
+			
 cnt : int ;
-content : [int];
+content : ref [int];
 boundx : int;
-lc : [int];
-con : [int]; 
-init : State {\(h : heap). true} unit {\(h : heap), (v : unit), (h' : heap). 
-			ilssel (h', content) = lc /\ len (lc) == 0  
-			/\ ilssel (h', inp) = ilssel (h, inp)  
-			/\ sel (h', cnt) == boundx};  
-
-step1 : State {\(h : heap). true} unit {\(h:heap),(v:unit),(h':heap). 
-				
-				ilssel (h, content) = l3 
-				/\ ilssel (h', content) = l4 
-				/\ len (l4) == (len(l3) + 1) /\ 
-				sel (h', cnt) == (sel (h, cnt) -- 1)};
-
+init : State {\(h : heap). true} unit {\(h : heap), (v : unit), (h' : heap). sel (h', content) == local /\ len (local) == 0 /\ hd_sel (h, inp) == hd_sel (h', inp) /\ sel (h', cnt) == 0};  
+step1 : State {\(h : heap). true} unit {\(h:heap),(v:unit),(h':heap). sel (h, content) == l0 /\ sel (h', content) == l1 /\ len (l1) = len(l0) + 1 /\ 
+				sel (h', cnt) == sel (h, cnt) + 1 };
 step2 : State  {\(h : heap). true} unit {\(h : heap), (v : unit), (h' : heap). h = h'}; 
 
-finalqf : State {\(h:heap). true} pair {\(h : heap), (v: pair), (h' : heap). fst (v) == boundx /\ snd (v) = ilssel (h, content)};
+finalqf : State {\(h:heap). true} pair {\(h : heap), (v: pair), (h' : heap). fst (p) == boundx /\ snd (p) == sel (h, content) };
 finalother : State  {\(h : heap). true} unit {\(h : heap), (v : unit), (h' : heap). h = h'};
 
-annot : State  {\(h:heap). true} pair {\(h : heap), (v: pair), (h' : heap). fst (v) == boundx /\  
-				(snd (v) = con  =>  
-				len (con) == fst (v))};
+annot : StExc  {\(h:heap). true} pair {\(h : heap), (v: pair), (h' : heap). fst (v) == boundx /\ snd (v) == content /\ len (content) = fst (v)};
 
 

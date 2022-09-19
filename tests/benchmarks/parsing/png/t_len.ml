@@ -4,7 +4,7 @@ module TM = TypesMap
 module FM = FormMap
 open SB  
 
-let specfile = "tests/unit/t-cpst-tests/t_len.spec"  
+let specfile = "tests/benchmarks/parsing/PNG/t_len.spec"  
 
 (*parse the associated spec file*)
 let ast = SB.parseLSpecFile specfile 
@@ -12,7 +12,7 @@ let () = Printf.printf "%s" ("\n ########SPECS######### \n "^(SpecLang.RelSpec.t
 let (tenv, formenv) =  SB.buildSigma ast  
 let getType s = TM.find tenv s  
 let getFormula s = FM.find formenv s 
-let initGamma = SB.initializeGamma ast
+
 (*define placeholder functions in L term with types*)
 let res = Trans.trivial_var "res"  
 let init = Trans.T_assign( (T_var "res"), (T_cref (T_const (ILit 0))))  
@@ -24,8 +24,7 @@ let t_len =
         let states_st = ["q0";"qf"] in 
 
        (* let regs = [(res, SpecLang.RefTy.fromTyD (SpecLang.TyD.Ty_int))] in *)
-       let regs = [(res, getType "res")] in 
-
+        let regs = [(res, getType "res")] in 
         let d1 = Trans.Del {name = "d1";src = "q0"; tgt = "qf"; guard=getFormula ("guard1"); step=step1; inv = SpecLang.P.True} in 
 
         let final = Trans.Final {fin = fun (st:Trans.state) -> 
@@ -46,4 +45,4 @@ let t_len =
         Trans.ST transition_system
 
 let () = 
-   Morpheus.verifyCPST initGamma t_len (getType "annot") 
+   Morpheus.verifyCPST t_len (getType "annot")     
