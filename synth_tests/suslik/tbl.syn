@@ -141,6 +141,15 @@ predicate sll(loc x, int len, int lo, int hi) {
 }
 
 
+predicate array(loc h, int arlen, set s) {
+       not ( h == 0) => {s == s1 /\ arlen == n; h :-> n ** (h + 1) :-> nxt ** sll(nxt, s1) ** sll_len (nxt, n)}
+}
+
+predicate array_len(loc h, int len) {
+      not ( h == 0) => {len == n; h :-> n}
+}
+
+
 predicate ulist(loc x, set s) {
 |  x == 0        => { s == {} ; emp }
 |  not (x == 0)  => { s == {v} ++ s1 /\ not (v in s1); [x, 2] ** x :-> v ** (x + 1) :-> nxt ** ulist(nxt, s1) }
@@ -181,14 +190,20 @@ void add(loc r, loc val)
 { mem == true /\ s1 == {a} ++ s /\ n1 == n + 1; r :-> y ** val :-> a ** ulist(y, s1) ** sll_mem(y, a, s1, mem) ** sll_len (y, n1)}
 
 
+void mem(loc r, loc val)
+{ r :-> x ** ulist(x, s) ** val :-> a1 ** sll_len (x, n)}
+{ (not (a == true) \/ (mem == true)) /\ (not (a == false) \/ (mem == false)) ; r :-> x ** val :-> a ** ulist(x, s) ** sll_mem(x, a, s, mem) ** sll_len (x, n)}
 
-(*I10 the motivational query in the paper *)
+
+(*I10 the motivational query in the paper and also I4 for Queue*)
 void goal (loc r, loc val)
 { r :-> x ** val :-> toret ** ulist (x, s) ** sll_len (x, n) }
 {(mem == true) /\ n1 == n + 1 /\ s1 == {toret} ++ s; r :-> y ** ulist (y, s1) ** sll_mem (y, toret, s1, mem) ** sll_len (y, n1)}
 {
 ??
 }
+
+
 
 
 The derivation took too long: more than 30000 seconds.
@@ -247,6 +262,35 @@ NilNotLval: succeeded 1 times (8ms), failed 1968 times (240ms)
 Synthesis failed:
 Failed to synthesise:
 (List(),org.tygus.suslik.util.SynStats@68abf2ad)
+
+
+
+(*I6 and I1*)
+void goal (loc r, loc val)
+{ (mem == false); r :-> x ** val :-> toret ** ulist (x, s) ** sll_len (x, n) ** sll_mem (x, toret, s, mem)}
+{(mem == true) /\ n1 == n + 1 /\ s1 == {toret} ++ s; r :-> y ** ulist (y, s1) ** sll_mem (y, toret, s1, mem) ** sll_len (y, n1)}
+{
+??
+}
+
+solution:
+void goal (loc r, loc val) {
+  add(r, val);
+  error;
+}
+
+
+(*I11 and also I5*)
+void goal (loc r, loc val)
+{ r :-> x ** val :-> toret ** ulist (x, s) ** sll_len (x, n) }
+{(mem == true) /\ n1 == n + 2 /\ s1 == {toret} ++ s; r :-> y ** ulist (y, s1) ** sll_mem (y, toret, s1, mem) ** sll_len (y, n1)}
+{
+??
+}
+The derivation took too long: more than 30000 seconds.
+
+
+
 
 
 **********

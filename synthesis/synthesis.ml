@@ -29,15 +29,15 @@ exception LearningException of string
 
 open Syn
 
-
+(* 
 module Printf = struct 
   let printf d s = Printf.printf d ""
   let originalPrint = Printf.printf 
-end  
+end   *)
 
 module Message = struct 
 
-  let show (s:string) = Printf.printf "%s" ("")
+  let show (s:string) = Printf.printf "%s" ("\n "^s)
   
   (* Printf.printf "%s" ("\n"^s)  *)
 
@@ -1158,7 +1158,7 @@ let rec esynthesizePureApp gamma sigma delta specs_path : Syn.typedMonExp option
     (*Add pure functions and constructors as well in the choice*)
     (* let c_es = c_es@c_wellRetTypeLambda in  *)
     Message.show ("Show Potential Functions");
-    Message.show (List.fold_left (fun acc (vi, _) -> acc^", \n Show"^Var.toString vi) " " potentialChoices);
+    Message.show (List.fold_left (fun acc (vi, _) -> acc^", \n "^Var.toString vi) " " potentialChoices);
    
 
     let rec choice potentialChoices gamma sigma delta = 
@@ -1227,7 +1227,8 @@ let rec esynthesizePureApp gamma sigma delta specs_path : Syn.typedMonExp option
                                             Message.show (" Show *************** TypeChecking Succsessful "^(RefTy.toString type4AppliedMonExp));
                                             
                                             Some {expMon= appliedMonExp; ofType=type4AppliedMonExp}                                  
-                                        | None ->  choice xs gamma sigma delta 
+                                        | None ->  
+                                           choice xs gamma sigma delta 
                                     
                                 else
                                   (*internal loop trying more than one choice for args*)  
@@ -1238,13 +1239,15 @@ let rec esynthesizePureApp gamma sigma delta specs_path : Syn.typedMonExp option
                                         | es_x :: es_xs -> 
                                             let monExps_es = List.map (fun ei -> ei.expMon) es_x in 
                                             let appliedMonExp = Syn.Eapp (Syn.Evar vi, [List.hd(monExps_es)]) in  (*apply vi e_arg*)
-                                            Message.show ("DEBUG :: "^(Syn.monExp_toString appliedMonExp));
+                                            Message.show ("\n DEBUG :: "^(Syn.monExp_toString appliedMonExp));
                                             let funAppType =  SynTC.typecheck gamma sigma delta !typenames !qualifiers appliedMonExp spec in 
                                                 match funAppType with 
                                                 | Some type4AppliedMonExp -> 
                                                      Message.show (" Show *************** TypeChecking Succsessful "^(RefTy.toString type4AppliedMonExp));
                                                     Some {expMon= appliedMonExp; ofType=type4AppliedMonExp}                                  
-                                                | None -> loop es_xs 
+                                                | None -> 
+                                                    Message.show ("\n FAILED TC PURE APP");    
+                                                    loop es_xs 
                                   in 
                                   let foundArg = loop es in 
                                   match foundArg with 

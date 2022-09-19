@@ -3,7 +3,7 @@ qualifier pqdom : heap :-> ref pq :-> bool;
 qualifier pqsel : heap :-> ref pq :-> pq;
 qualifier pqlen : pq   :-> int; 
 qualifier pqmem : pq   :-> int :-> bool;
-qualifier minimum : pq :-> int  :-> bool;
+qualifier minimum : pq :-> int;
 
 Top : int;
 
@@ -82,7 +82,7 @@ delete_min :  (pqueue : ref pq) ->
                     } 
 			    v : { v : unit | true}   
                 {\(h : heap), (v : unit), (h' : heap). 
-				          \(P : pq), (P' : pq), (A : int.
+				          \(P : pq), (P' : pq), (A : int).
 	                    pqsel (h, pqueue) = P /\
                       pqsel (h', pqueue) = P' /\
                       minimum (P) = A /\
@@ -125,7 +125,7 @@ insert :    (x : a) ->
                                
                 };
 goal :(pqueue : ref pq) ->  
-       {x : int | Top > x } -> 
+       (x : {v : int | Top > v}) -> 
             State {\(h : heap). 
                     \(P : pq).
                     pqdom (h, pqueue) = true} 
@@ -137,5 +137,5 @@ goal :(pqueue : ref pq) ->
                       => 
                       (pqmem (P', x) = true /\
                       minimum (P') = x)  
-                      )    
+                          
                 };

@@ -359,8 +359,7 @@ let rec havocPred (pred : P.t) : (vtybinds*vc_pred) =
         ([], coercePTtoT pred) (* May need havoc here.*)
 
 
-(*A very simplified version which lowers each RefTy to its base type
- * TODO - This might need to be extended to add the predicates of the types to the environment*)
+(*A very simplified version which lowers each RefTy to its base type*)
 let rec havocGamma ( _glist) =
   let open RefTy in 
    List.map (fun (v , refty) -> (v, RefTy.toTyD refty)) _glist         
@@ -380,7 +379,7 @@ let lookup_type (v : Var.t) (_gamma : vctybind list) =
 
 
 
-(*TODO A function to coerce predicates from the Predicate in Spec language to Predicates in VC*)     
+(*A function to coerce predicates from the Predicate in Spec language to Predicates in VC*)     
 let standardize ( calculated_vc : t ) : (standardt) =  
 let () = Printf.printf "%s" ("\n Standardizing verification conditions ") in  
 let VC (_g, _ante, _cons) = calculated_vc in 

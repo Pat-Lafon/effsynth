@@ -1,4 +1,3 @@
-(* Can we use the tyoes of List *)
 include List
 let size = List.length
 exception VectorExc of string 

@@ -73,6 +73,7 @@ let typecheck (gamma : Gamma.t) (sigma:Sigma.t) (delta : Predicate.t)
               (t : Syn.monExp) (spec : RefTy.t) : (RefTy.t option) = 
 	  
     let () = Printf.printf "%s" ("\n Typechecking "^(Syn.monExp_toString t)) in 
+    let () = Printf.printf "%s" ("\n Against "^(RefTy.toString spec)) in 
      match t with 
       | Eapp (funExp, argsList) (*Eapp foo [x1, x2, x3,...xn] *) -> 
           let Evar funName = funExp in 
@@ -83,6 +84,7 @@ let typecheck (gamma : Gamma.t) (sigma:Sigma.t) (delta : Predicate.t)
           in 
           (match funType with 
               | RefTy.Arrow ((_,_), _) -> 
+                (*Implements the pure-fun app rule *)
                 let uncurried = RefTy.uncurry_Arrow funType in 
                 let RefTy.Uncurried (formalsList, retTy) = uncurried in
                 (*create substitution (actuals, foramls)*)
@@ -94,17 +96,41 @@ let typecheck (gamma : Gamma.t) (sigma:Sigma.t) (delta : Predicate.t)
                 (*We DO NOT need to check types and lengths for actual and formal 
                 as these are synthesized and we get it for free from the soundness of the synthesis
                 *)
+                let actualsTypes = 
+                    List.map (fun vi -> 
+                      let vi_var = Syn.componentNameForMonExp vi in 
+                      let vi_type = 
+                        try 
+                          Gamma.find gamma (vi_var) 
+                        with 
+                          | e -> raise (SynthesisException "EApp Typechecking : Argument Missing")
+                      in 
+                      let RefTy.Base (nu, tb, phi_i) = vi_type in 
+                      let phi_i_applied = Predicate.applySubst (vi_var, nu) phi_i in 
+                      (vi_var, vi_type, phi_i_applied) 
+                      ) argsList in 
+
+                let () = List.iter(fun (vi, vi_type, phi_i) ->  
+                          Printf.printf "%s" ("\n Argument "^(vi)^" :: "^(RefTy.toString vi_type)^" | "^(Predicate.toString phi_i) )) actualsTypes in 
+
+                let delta_extended = List.map (fun (_, _, phi_i) -> phi_i) actualsTypes in 
+
+                
+                
                 let subs = List.combine actuals formals in 
                 (*create the type [actuals/foramls] retTy*)
                 let appType = RefTy.applySubsts subs retTy in 
 
+                 let () = Printf.printf "%s" ("\n AppType "^(RefTy.toString appType)) in 
+   
                 (*the subtyping check*)
 
-                let vc = VC.fromTypeCheck gamma [delta] (appType, spec) in 
-
+                let vc = VC.fromTypeCheck gamma (delta::delta_extended) (appType, spec) in 
+                let () = Printf.printf "%s" ("\n  VC "^VC.string_for_vc_t vc) in  
+                
                 (*make a direct call to the SMT solver*)
                 let vcStandard = VC.standardize vc in 
-                let () = Printf.printf "%s" ("\n $$$$$$$$$$$$$$$ "^VC.string_for_vc_stt vcStandard) in  
+                let () = Printf.printf "%s" ("\n Standardized VC "^VC.string_for_vc_stt vcStandard) in  
                 let result = VCE.discharge vcStandard typenames qualifiers  in 
                 let typechecks = 
                   match result with 

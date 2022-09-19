@@ -14,7 +14,7 @@ let anon_fun specfile =
     spec_file := specfile
 
 module Printf = struct 
-  let printf d s = Printf.printf d ""
+  let printf d s = Printf.printf d s
   let originalPrint = Printf.printf 
 end  
 

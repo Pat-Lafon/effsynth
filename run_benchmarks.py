@@ -7,6 +7,7 @@ import resource
 
 cobalt          = './effsynth.native'
 TIMEOUT      = 120                          # Timeout in secs
+FORCEDTO     = '600s'
 TEST_DIR     = './synth_tests/unit/checked/'   # Root directory for the tests   
 VARIANTS     = ['cobalt', 'fw-alone', 'bw-alone','no-cdcl']    # Configurations
 RESULTS      = 'results.txt'                                      # Output file with synthesis results
@@ -43,9 +44,9 @@ ALL_BENCHMARKS = [
     Benchmark('parsers/png_simple', 'P1 png_chunk'),
     Benchmark('parsers/png_simple2', 'P2 png_chunk'),
     Benchmark('parsers/png_simple_if', 'P3 png_chunk'),
-    Benchmark('parsers/cdcl_typedecl', 'P4 C_typedec'),
-    Benchmark('parsers/cdcl_fundec_simple', 'P5 C_extern_fundec'),
-    Benchmark('parsers/cdcl_vardec_simple', 'P6 C_extern_vardec'),
+    Benchmark('parsers/cdecl_typedecl', 'P4 C_typedec'),
+    Benchmark('parsers/cdecl_fundec_simple', 'P5 C_extern_fundec'),
+    Benchmark('parsers/cdecl_vardec_simple', 'P6 C_extern_vardec'),
    
      ]),
    
@@ -71,11 +72,10 @@ ALL_BENCHMARKS = [
     Benchmark('vocal/Queue1', 'Q1'),
     Benchmark('vocal/Queue2', 'Q2'),
     Benchmark('vocal/Queue3', 'Q3'),
-    Benchmark('vocal/ZipplerList1', 'ZL1'),
-    Benchmark('vocal/ZipplerList2', 'ZL2'),
-    Benchmark('vocal/ZipplerList3', 'ZL3'),
+    Benchmark('vocal/ZipperList1', 'ZL1'),
+    Benchmark('vocal/ZipperList2', 'ZL2'),
+    Benchmark('vocal/ZipperList3', 'ZL3'),
 
-    Benchmark('vocal/PriorityQueue1', 'PQ1'),
     Benchmark('vocal/PriorityQueue2', 'PQ2'),
 
     Benchmark('vocal/HashTable1', 'HT1'),
@@ -107,7 +107,7 @@ def run_benchmark(file, variant):
     if variant == 'cobalt':
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         try:
-            run(['time', cobalt,  '-bi', '-cdcl',  file], timeout =TIMEOUT,  stdout=outfile)
+            run(['timeout', FORCEDTO, 'time', cobalt,  '-bi', '-cdcl',  file], timeout =TIMEOUT,  stdout=outfile)
             usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)    
             cpu_time = usage_end.ru_utime - usage_start.ru_utime    
         except TimeoutExpired:
@@ -117,7 +117,7 @@ def run_benchmark(file, variant):
     elif variant == 'fw-alone':
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         try:
-            run(['time', cobalt, '-cdcl', file], timeout =TIMEOUT,  stdout=outfile)
+            run(['timeout', FORCEDTO, 'time', cobalt, '-cdcl', file], timeout =TIMEOUT,  stdout=outfile)
             usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)    
             cpu_time = usage_end.ru_utime - usage_start.ru_utime    
         except TimeoutExpired:
@@ -127,7 +127,7 @@ def run_benchmark(file, variant):
         
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         try:
-            run(['time', cobalt, '-bi', file], timeout =TIMEOUT,  stdout=outfile)
+            run(['timeout', FORCEDTO, 'time', cobalt, '-bi', file], timeout =TIMEOUT,  stdout=outfile)
             usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)    
             cpu_time = usage_end.ru_utime - usage_start.ru_utime    
         except TimeoutExpired:
@@ -137,7 +137,7 @@ def run_benchmark(file, variant):
     elif variant == 'no-cdcl':
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         try:
-            run(['time', cobalt, file], timeout =TIMEOUT,  stdout=outfile)
+            run(['timeout', FORCEDTO, 'time', cobalt, file], timeout =TIMEOUT,  stdout=outfile)
             usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)    
             cpu_time = usage_end.ru_utime - usage_start.ru_utime    
         except TimeoutExpired:
@@ -146,7 +146,7 @@ def run_benchmark(file, variant):
     else:
         usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         try:
-            run(['time', cobalt, '-bi', '-cdcl', file], timeout =TIMEOUT,  stdout=outfile)
+            run(['timeout', FORCEDTO, 'time', cobalt, '-bi', '-cdcl', file], timeout =TIMEOUT,  stdout=outfile)
             usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)    
             cpu_time = usage_end.ru_utime - usage_start.ru_utime    
         except TimeoutExpired:

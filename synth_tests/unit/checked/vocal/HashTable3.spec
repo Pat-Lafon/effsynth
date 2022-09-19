@@ -43,16 +43,15 @@ reset : (ht : ref table) ->
 copy : (ht1 : ref table) -> 
             State {\(h : heap).
                 \(H1: table). 
-                        dom (h, ht1) = true
+                        hdom (h, ht1) = true
                  } 
 			     v : { v : ref table | true} 
                 {\(h : heap), (v : ref table), (h' : heap). 
 				 \(H1: table), (HN : table). 
-                    dom (h', v) = true /\
+                    hdom (h', v) = true /\
                     hsel (h, ht1) = H1 /\ 
                     hsel (h', v) = HN /\
                     hsel (h', ht1) = hsel (h, ht1) /\
-                    keyset (HN) = keyset (H1) /\
                     hsize (HN) = hsize  (H1) 
                 };
 
@@ -61,7 +60,7 @@ copy : (ht1 : ref table) ->
 population: (ht1 : ref table) -> 
             State {\(h : heap).
                 \(H1: table). 
-                        dom (h, ht1) = true
+                        hdom (h, ht1) = true
                  } 
 			     v : { v : int | true} 
                 {\(h : heap), (v : int ), (h' : heap). 
@@ -74,7 +73,7 @@ population: (ht1 : ref table) ->
 length : (ht1 : ref table) -> 
             State {\(h : heap).
                 \(H1: table). 
-                        dom (h, ht1) = true
+                        hdom (h, ht1) = true
                  } 
 			     v : { v : int | true} 
                 {\(h : heap), (v : int ), (h' : heap). 
@@ -170,7 +169,7 @@ find: (ht : ref table)  ->
                 };
 
 
-goal : (ht : ref table)
+goal : (ht : ref table) ->
        (k : key) ->
        (val : a) ->  
         State {\(h : heap).
