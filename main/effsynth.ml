@@ -1,6 +1,7 @@
 open SpecLang
 module SEL = SpecElab
 module Synth = Synthesis
+module PureSynth = Puresynthesis
 module Lambda = Lambdasyn
 exception CompilerExc of string
 
@@ -23,7 +24,8 @@ let bidirectional = ref false
 let spec_file = ref ""
 let effect_filter = ref false
 let goal_number = ref 0
-let maxPathlength = ref 10
+let maxPathlength = ref 6
+let recursive = ref true
 let usage_msg = "effsynth [-cdcl] [-bi] [-effect] <spec-file1> -g <goal-number>"
 let anon_fun specfile =
     spec_file := specfile
@@ -44,13 +46,20 @@ let () = Printf.printf "%s" ("\n EXPLORED effect-filter  "^(string_of_bool !effe
 let () = Printf.printf "%s" ("\n EXPLORED specfile :: "^(!spec_file)) in
 let () = Printf.printf "%s" ("\n EXPLORED goal Number :: "^(string_of_int (!goal_number))) in
 
+let s = SEL.load_file !spec_file in
+
+let parts = Str.split (Str.regexp "\\#+") s in
+
+let spec = (List.hd parts) in
+let components = Option.value (List.nth_opt parts 1) ~default:"" in
+let examples = Option.value (List.nth_opt parts 2) ~default:"" in
+
 (** Parse AST *)
-let ast = SEL.parseLSpecFile !spec_file in
+let ast = SEL.parseLSpecFromString spec in
 
 (** Debug ast*)
 let string_ast = RelSpec.toString ast in
 let () = Printf.printf "\n\n Printing ast:\n%s" string_ast in
-
 
 (** Initialize state for synthesis *)
 (* Gamma: Starting context of components *)
@@ -62,6 +71,7 @@ let (gamma, sigma, typenames, quals, goals) = SEL.elaborateEnvs ast in
 let goal = List.nth goals !goal_number in
 let delta = P.True in
 
+let gamma = if !recursive then Environment.TypingEnv.add gamma "goal" goal else gamma in
 
 (** Debug info *)
 let () = Printf.printf "%s" "\n\n INITIAL GAMMA" in
@@ -78,9 +88,15 @@ let () = List.iter (fun (qi) -> Printf.printf " %s"
 let () = Printf.printf "%s" "\n\n Goals" in
 let () = List.iter (fun rt -> Printf.printf " %s" ("\n "^(RefTy.toString rt))) goals in
 
-(** Starts the synthesis engine*)
+(* (** Starts the synthesis engine*)
 let synthterm = Synth.Bidirectional.toplevel gamma sigma delta typenames quals goal !learningON !bidirectional !maxPathlength !effect_filter in
   (*run the initial environment builder*)
   match synthterm with
       | None -> Printf.originalPrint "%s" "Synthesis returned witout result"
-      | Some t -> Printf.originalPrint "%s" ("Success : "^(Lambda.typedMonExp_toString t))
+      | Some t -> Printf.originalPrint "%s" ("Success : "^(Lambda.typedMonExp_toString t)) *)
+
+let synthterm = PureSynth.toplevel gamma sigma delta typenames quals goal !learningON !bidirectional !maxPathlength !effect_filter components examples in
+  (*run the initial environment builder*)
+  match synthterm with
+      | None -> Printf.originalPrint "%s" "\nSynthesis returned witout result"
+      | Some t -> Printf.originalPrint "%s" ("\nSuccess : "^(Lambda.typedMonExp_toString t))

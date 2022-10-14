@@ -28,7 +28,7 @@ let lexAndParseLSpec s=
       with
       | _ -> raise (ParserError "Error in Lexing ")
     in
-    let v = Lexing.lexeme lexbuf in
+    let _v = Lexing.lexeme lexbuf in
 
     let ast =
       try
@@ -38,15 +38,18 @@ let lexAndParseLSpec s=
     in
     ast
 
+let parseLSpecFromString s =
+  try
+    let ast = lexAndParseLSpec s in
+    ast
+  with
+  | e -> raise e
+
 (* print the ast*)
 let parseLSpecFile file =
-    let s = load_file file in
-     Printf.printf "%s" s;
-    try
-      let ast = lexAndParseLSpec s in
-      ast
-    with
-    | e -> raise e
+  let s = load_file file in
+  Printf.printf "%s" s;
+  parseLSpecFromString s
 
 
 (*Populate the Gamma, Formulas, and Sigma*)
@@ -75,7 +78,7 @@ let elaborateEnvs ast =
                                       | x :: xs ->
                                           let Algebraic.Const {name;args} = x in
                                           let argTupleTyd = TyD.Ty_tuple args in
-                                          let argsRefTy = RefTy.fromTyD argTupleTyd in
+                                          let _argsRefTy = RefTy.fromTyD argTupleTyd in
 
                                           let consBaseType = TyD.Ty_arrow (argTupleTyd, TyD.fromString typename) in
                                           let consRefType = RefTy.fromTyD consBaseType in

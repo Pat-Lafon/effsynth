@@ -85,7 +85,10 @@ module Var = struct
   type t = Ident.t
   let toString = Ident.name
 
-
+  let toOcaml = function
+  | "Nil" -> "[]"
+  | "Cons" -> "(::)"
+  | x -> toString x
 
   let symbase = "var_"
 
@@ -136,7 +139,7 @@ struct
 
 
   let getIdNumber rid =
-    let relCharList = explode rid in
+    let _relCharList = explode rid in
     2
 
 end
@@ -202,8 +205,8 @@ module rec Algebraic : sig
         else
             false
 
-      let sametype (TD {typename=name1;constructors=constlist1} as t1)
-            (TD {typename=name2;constructors=constlist2} as t2)
+      let sametype (TD {typename=name1;constructors=constlist1})
+            (TD {typename=name2;constructors=constlist2})
         =
            (Var.equal name1 name2)  &&
             (List.for_all2 (fun c1 c2 -> constructor_equal c1 c2) constlist1 constlist2)
@@ -239,6 +242,7 @@ type t =
  val sametype : t -> t -> bool
  val fromString : string -> t
  val toString : t -> string
+ val toOcaml : t -> string
  val makeTunknown : unit -> t
  val makeTList : t -> t
  val makeTRef : t ->  t
@@ -322,6 +326,19 @@ type t =
         | Ty_arrow  (_ , _)-> "Function type"
         | Ty_alg at -> Algebraic.toString at
 
+let rec toOcaml t =
+  match t with
+  | Ty_unit -> "unit"
+  | Ty_list t -> (toOcaml t) ^ " list"
+  | Ty_int -> "int"
+  | Ty_bool -> "bool"
+  | Ty_string -> "string"
+  | Ty_arrow (a1, a2) -> (toOcaml a1) ^ " -> " ^ (toOcaml a2)
+  | Ty_ref _ -> failwith "specLang.ml toOcaml: trying to create ref"
+  | Ty_unknown -> failwith "specLang.ml toOcaml: trying to create unknown type"
+  | Ty_alpha t -> "_ " ^ t
+(*   | _ -> failwith "specLang.ml toOcaml: unsupported case"
+ *)
  let isList t =
   match t with
     | Ty_list _ -> true
@@ -449,14 +466,14 @@ struct
     (List.length tydv1 = List.length tydv2) &&
     (List.for_all2 tTeq tydv1 tydv2)
 
-  let unionType ((Tuple tydv1) as t1, (Tuple tydv2) as t2) =
+  let unionType (Tuple tydv1, Tuple tydv2) =
     match (List.length tydv1, List.length tydv2) with
     |(0, _) -> ([], Tuple tydv1)
     |(_, 0) -> ([], Tuple tydv2)
     |(n1, n2) -> if (equal (Tuple tydv1) (Tuple tydv2)) then ([], Tuple tydv1)
         else ([Eq (Tuple tydv1  ,Tuple tydv2)], Tuple tydv1)
 
-  let crossPrdType (Tuple tyds1 as t1, Tuple tyds2 as t2) =
+  let crossPrdType (Tuple tyds1, Tuple tyds2) =
     match (List.length tyds1, List.length tyds2) with
       (0,_) -> ([], Tuple tyds1)
     | (_,0) -> ([], Tuple tyds2)
@@ -479,11 +496,11 @@ struct
   type sol = (SVar.t * t)
 
   let trySolveConstraint (c:cs) : sol option =
-    let len = List.length in
+    let _len = List.length in
 
     let assertNotCirc (v, rt) = (* assert true in *)
       let rhsvs = (getSVars rt) in
-      let cStr = fun _ -> (SVar.toString v)^" = "^ (toString rt) in
+      let _cStr = fun _ -> (SVar.toString v)^" = "^ (toString rt) in
       let () = assert (List.for_all (fun rhsv ->
                        not (SVar.eq v rhsv)) rhsvs)
 
@@ -673,9 +690,9 @@ module ProjTypeScheme = struct
   let generalize (tyvars, ss) = T {tyvars=tyvars; sortscheme = ss}
   (*TODO Ashish
    * Instantiate returns the same ProjSortScheme*)
-  let instantiate (T {tyvars;sortscheme=ss} as pts, tydlist) =
-    let lentyDlist = (List.length tydlist) in
-    let lentyvar = (List.length tyvars) in
+  let instantiate (T {tyvars;sortscheme=ss}, tydlist) =
+    let _lentyDlist = (List.length tydlist) in
+    let _lentyvar = (List.length tyvars) in
 
     (* let tyvmap = try
       (List.map2 (fun x y  -> (x,y)) tydlist tyvars) with
@@ -859,7 +876,7 @@ struct
     | V e -> V (elemSubst e)
   let rec mapInstExpr t f =
     let g = fun x -> mapInstExpr x f in
-    let doIt = fun cons -> fun (x1, x2) -> cons (g x1 , g x2) in
+    let _doIt = fun cons -> fun (x1, x2) -> cons (g x1 , g x2) in
 
     match t with
       X (x, y) ->  X ( g x, g y)
@@ -870,6 +887,7 @@ struct
     | T _ -> t
     | R (ie, x) -> R (f ie, x)
     | V e -> t
+    | _ -> failwith "unimplemented"
 
 
   let mapTyD t f =
@@ -1193,7 +1211,7 @@ let list_conjunction (ls : t list) : t =
 let heap_inv_predicate (result : (Var.t*TyD.t))  : t  =
         let h_ident = Var.fromString "h" in
         let h'_ident = Var.fromString "h'" in
-        let v_indet = Var.fromString "v" in
+        let _v_indet = Var.fromString "v" in
         let bvs = [(h_ident, TyD.Ty_heap);
                    (result);
                    (h'_ident, TyD.Ty_heap)] in
@@ -1288,7 +1306,7 @@ let getRetVarBinding t =
                 (*Thw WP case, which will always be line
                           \Forall h. Pre_f /\ (\forall, v, h'.
                                   Post_f =>  Goal) *)
-                match predBody with
+                (match predBody with
                   | Conj (p1, p2) ->
                         let _ = Printf.printf "%s" ("\n The WP Case ") in
 
@@ -1300,7 +1318,7 @@ let getRetVarBinding t =
                         else
                           raise (SpecLangEx "Illegal Predicate :: Bvs &&& must be forall h v h'")
 
-                  | _ -> raise (SpecLangEx "Illegal Predicate :: Bvs &&& must be forall h v h'")
+                  | _ -> raise (SpecLangEx "Illegal Predicate :: Bvs &&& must be forall h v h'"))
         | _ -> raise (SpecLangEx "RetVar Called on Illegal Predicate")
 
 
@@ -1323,9 +1341,9 @@ let rec toString t = match t with
 
       | Disj (e1,e2) ->  ("\n Disj <d  "^(toString e1 )^"\n \t,   "^(toString e2)^ ">d ")
 
-      | If (e1,e2) -> ("\n \t Impl < "^(toString e1 )^"\n \t "^(toString e2)^" >"  )
+      | If (e1,e2) -> ("Impl < "^(toString e1 )^","^(toString e2)^" >"  )
 
-      | Iff (e1,e2) ->  ("DoubleImpl \n "^(toString e1 )^"\n  "^(toString e2))
+      | Iff (e1,e2) ->  ("DoubleImpl <"^(toString e1 )^", "^(toString e2)^">")
 
       | Dot (e1,e2) ->  ("Dot "^(toString e1 )^", "^(toString e2))
 
@@ -1684,7 +1702,7 @@ struct
    let rec toString rty = match rty with
         Base(var,td,pred) -> ("Base {" ^ (Var.toString var)^ ":" ^ (TyD.toString td) ^(" | ")^(Predicate.toString pred))^"}"
         | Tuple tupleList -> (List.fold_left (fun acc rti -> acc^", "^(toString rti)) "Tuple [" tupleList)^" ]"
-        | Arrow ((v1,t1),t2) ->  (" Arrow ( ( "^(Var.toString v1)^" , "^(toString t1)^" ),"^(toString t2))
+        | Arrow ((v1,t1),t2) -> (" Arrow ( ( "^(Var.toString v1)^" , "^(toString t1)^" ),"^(toString t2))
         | MArrow (eff, p1,(v, t), p2) -> ("MArrrow ( "^(Effect.toString eff)^" \n
                                                 PRE { \n "^(Predicate.toString p1)^(" \n } \n
                                                 RET :  ")^(toString t)^" \n {
@@ -1696,6 +1714,18 @@ struct
         | Uncurried (fargs, bodyty) ->
             let string4fargs = (List.fold_left (fun acc (vi, rti) -> (acc^", "^(Var.toString vi)^":"^toString rti)) "Uncurried " fargs) in
             (string4fargs^" -> "^(toString bodyty))
+
+  let rec toOcaml rty =
+    match rty with
+    | Base (var, td, pred) -> (* "("^(Var.toString var)^ ":" ^ (TyD.toOcaml td) ^")" *)
+      TyD.toOcaml td
+    | Tuple [] -> "()"
+    | Tuple tuplelist -> (List.fold_left (fun acc rti -> acc^", "^(toOcaml rti)) ("("^(List.hd tuplelist |> toOcaml)) (List.tl tuplelist))^")"
+    | Arrow ((v1, t1), Base(_, t,_)) -> ("("^(Var.toString v1)^":"^(toOcaml t1)^") : "^(TyD.toOcaml t))
+    | Arrow ((v1, t1), t2) -> ("("^(Var.toString v1)^":"^(toOcaml t1)^") "^(toOcaml t2))
+    | Uncurried (fargs, bodyty) -> failwith "unimplemented"
+    | _ -> failwith "toOcaml in specLang unhandled case"
+
    (*least effect of types*)
    let lub_effects (ty1:t) (ty2:t) : Effect.t =
         Effect.lub (get_effect ty1) (get_effect ty2)
@@ -1925,7 +1955,7 @@ module RelSpec = struct
    *)
    let toString t =
         let T {typedefs;reldecs;primdecs;typespecs;preds;quals} = t in
-        let als = List.fold_left
+        let _als = List.fold_left
             (fun tdacc td -> (tdacc^"\n "^(Algebraic.toString td))) " Typedefs " typedefs in
         let ps =  List.fold_left
             (fun psacc p -> (psacc^" \n "^(Formula.toString p))) " Formulas " preds in
@@ -1935,7 +1965,7 @@ module RelSpec = struct
 
         let tss = List.fold_left (fun tsacc ts -> (tsacc^" \n "^(TypeSpec.toString ts))) " TSs " typespecs in
 
-        let qs =  List.fold_left
+        let _qs =  List.fold_left
             (fun qsacc q -> (qsacc^" \n "^(Qualifier.toString q))) " Qualifiers " quals
              in
 

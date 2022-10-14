@@ -51,10 +51,7 @@ let lambdas4RetType t (rt:TypingEnvValue.t)  : ((TypingEnvKey.t*TypingEnvValue.t
             | (vi, rti) :: xs->
                     match rti with
                         | RefinementType.Arrow ((arg, argty),_) ->
-                              let uncurried =   RefinementType.uncurry_Arrow rti in
-
                             let RefinementType.Uncurried (_, retty)= RefinementType.uncurry_Arrow rti in
-
 
                             if (RefinementType.compare_types rt retty) then
                                 let filtered = filtered@[(vi, rti)] in
